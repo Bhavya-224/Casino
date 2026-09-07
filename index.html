@@ -99,7 +99,7 @@
     border-radius: 16px;
     padding: 16px 24px;
     max-width: 500px;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
     font-size: 1rem;
     line-height: 1.6;
   }
@@ -107,28 +107,6 @@
   .rules-checklist span {
     color: var(--gold);
     font-weight: bold;
-  }
-
-  .prediction-box {
-    margin-bottom: 20px;
-    text-align: center;
-  }
-
-  .pred-btn {
-    background: #222;
-    border: 2px solid var(--gold);
-    color: var(--gold);
-    font-weight: bold;
-    padding: 8px 18px;
-    border-radius: 20px;
-    margin: 0 6px;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-
-  .pred-btn.selected {
-    background: var(--gold);
-    color: #111;
   }
 
   .start-casino-btn {
@@ -465,13 +443,6 @@
     ⚖️ <span>The Payout:</span> Non-double sum is <strong>Even (+ $1)</strong> or <strong>Odd (- $1)</strong>.
   </div>
 
-  <div class="prediction-box">
-    <p style="margin: 0 0 8px; font-weight: bold; color: var(--gold);">Before rolling: Do you think this casino game is...</p>
-    <button class="pred-btn" onclick="selectPred(this, 'Fair')">⚖️ Fair</button>
-    <button class="pred-btn" onclick="selectPred(this, 'In Player Favor')">🍀 In Your Favor</button>
-    <button class="pred-btn" onclick="selectPred(this, 'House Rigged')">🎰 Rigged for the Casino</button>
-  </div>
-
   <button class="start-casino-btn" onclick="startGame()">ENTER CASINO & ROLL</button>
 </div>
 
@@ -569,14 +540,6 @@
 <script>
   // PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL HERE
   const SCRIPT_URL = "PASTE_YOUR_COPIED_WEB_APP_URL_HERE";
-
-  let studentPrediction = "None";
-
-  function selectPred(btn, val) {
-    document.querySelectorAll('.pred-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    studentPrediction = val;
-  }
 
   function speakRule() {
     const dialogs = [
@@ -782,7 +745,6 @@
     const net = bankroll - 20;
     const payload = {
       studentName: name,
-      prediction: studentPrediction || "Not selected",
       finalBankroll: bankroll,
       netProfit: net,
       doubles: totalDoubles,
