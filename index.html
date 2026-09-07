@@ -28,7 +28,7 @@
     overflow-x: hidden;
   }
 
-  /* Intro Screen Styling */
+  /* Intro Screen */
   .intro-overlay {
     position: fixed;
     top: 0;
@@ -149,7 +149,7 @@
     box-shadow: 0 3px 0 #6e4100;
   }
 
-  /* Table Components */
+  /* Game Canvas & Layout */
   canvas#fireworks {
     position: fixed;
     top: 0;
@@ -170,7 +170,7 @@
     box-shadow: inset 0 0 50px rgba(0,0,0,0.85), 0 0 25px rgba(255, 215, 0, 0.2);
     padding: 24px;
     box-sizing: border-box;
-    display: none; /* revealed after intro */
+    display: none;
   }
 
   .table-header {
@@ -567,6 +567,9 @@
 </div>
 
 <script>
+  // PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL HERE
+  const SCRIPT_URL = "PASTE_YOUR_COPIED_WEB_APP_URL_HERE";
+
   let studentPrediction = "None";
 
   function selectPred(btn, val) {
@@ -599,7 +602,6 @@
     document.getElementById("casinoStage").style.display = "block";
   }
 
-  /* Game Simulation State */
   let bankroll = 20;
   let trial = 1;
   const maxTrials = 20;
@@ -617,7 +619,6 @@
     6: { x: 0, y: 180 }
   };
 
-  /* Fireworks */
   const canvas = document.getElementById("fireworks");
   const ctx = canvas.getContext("2d");
   let particles = [];
@@ -764,26 +765,51 @@
     triggerFireworks();
   }
 
-  function submitResults() {
+  async function submitResults() {
     const nameInput = document.getElementById("studentName");
     const name = nameInput.value.trim();
     const notice = document.getElementById("submitNotice");
+    const submitBtn = document.querySelector(".submit-btn");
 
     if (!name) {
       notice.innerHTML = `<span style="color: var(--lose-red);">Please enter your name first!</span>`;
       return;
     }
 
-    const net = bankroll - 20;
-    const netSign = net >= 0 ? "+$" : "-$";
+    submitBtn.disabled = true;
+    notice.innerHTML = `<span style="color: var(--gold);">Recording submission to spreadsheet...</span>`;
 
-    notice.innerHTML = `
-      <span style="color: var(--win-green); font-weight: bold;">
-        ✓ Recorded for ${name}! (Prediction was: ${studentPrediction})<br>
-        Final: $${bankroll} (${netSign}${Math.abs(net)}) | Doubles: ${totalDoubles} | Evens: ${totalEvens} | Odds: ${totalOdds}
-      </span>
-    `;
-    nameInput.disabled = true;
+    const net = bankroll - 20;
+    const payload = {
+      studentName: name,
+      prediction: studentPrediction || "Not selected",
+      finalBankroll: bankroll,
+      netProfit: net,
+      doubles: totalDoubles,
+      evens: totalEvens,
+      odds: totalOdds
+    };
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const netSign = net >= 0 ? "+$" : "-$";
+      notice.innerHTML = `
+        <span style="color: var(--win-green); font-weight: bold;">
+          ✓ Recorded for ${name}!<br>
+          Final: $${bankroll} (${netSign}${Math.abs(net)}) | Successfully uploaded!
+        </span>
+      `;
+      nameInput.disabled = true;
+    } catch (error) {
+      notice.innerHTML = `<span style="color: var(--lose-red);">Failed to upload. Check internet connection.</span>`;
+      submitBtn.disabled = false;
+    }
   }
 
   function updateUI() {
