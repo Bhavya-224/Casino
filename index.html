@@ -538,7 +538,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmztgQ3RYQUUywhYGCs-PMc8lsysvQ7p1o2W32onqxDFEcW4VYdi9eKbJ79yW27OffuA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzu0_rkE1zj8d_1sl1EjTqptbTEQhexcSvf-J3OnZgMPwwvSTphIIBpJivz5w8na3q1fA/exec";
 
   function speakRule() {
     const dialogs = [
@@ -743,19 +743,23 @@
 
     const net = bankroll - 20;
 
-    const formData = new URLSearchParams();
-    formData.append("studentName", name);
-    formData.append("finalBankroll", bankroll);
-    formData.append("netProfit", net);
-    formData.append("doubles", totalDoubles);
-    formData.append("evens", totalEvens);
-    formData.append("odds", totalOdds);
+    const payload = {
+      studentName: name,
+      finalBankroll: bankroll,
+      netProfit: net,
+      doubles: totalDoubles,
+      evens: totalEvens,
+      odds: totalOdds
+    };
 
     try {
       await fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
-        body: formData
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
       });
 
       const netSign = net >= 0 ? "+$" : "-$";
