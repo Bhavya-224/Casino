@@ -538,8 +538,7 @@
 </div>
 
 <script>
-  // PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL HERE
-  const SCRIPT_URL = "PASTE_YOUR_COPIED_WEB_APP_URL_HERE";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmztgQ3RYQUUywhYGCs-PMc8lsysvQ7p1o2W32onqxDFEcW4VYdi9eKbJ79yW27OffuA/exec";
 
   function speakRule() {
     const dialogs = [
@@ -740,36 +739,35 @@
     }
 
     submitBtn.disabled = true;
-    notice.innerHTML = `<span style="color: var(--gold);">Recording submission to spreadsheet...</span>`;
+    notice.innerHTML = `<span style="color: var(--gold);">Uploading to spreadsheet...</span>`;
 
     const net = bankroll - 20;
-    const payload = {
-      studentName: name,
-      finalBankroll: bankroll,
-      netProfit: net,
-      doubles: totalDoubles,
-      evens: totalEvens,
-      odds: totalOdds
-    };
+
+    const formData = new URLSearchParams();
+    formData.append("studentName", name);
+    formData.append("finalBankroll", bankroll);
+    formData.append("netProfit", net);
+    formData.append("doubles", totalDoubles);
+    formData.append("evens", totalEvens);
+    formData.append("odds", totalOdds);
 
     try {
       await fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
       const netSign = net >= 0 ? "+$" : "-$";
       notice.innerHTML = `
         <span style="color: var(--win-green); font-weight: bold;">
           ✓ Recorded for ${name}!<br>
-          Final: $${bankroll} (${netSign}${Math.abs(net)}) | Successfully uploaded!
+          Final: $${bankroll} (${netSign}${Math.abs(net)}) | Uploaded to spreadsheet!
         </span>
       `;
       nameInput.disabled = true;
     } catch (error) {
-      notice.innerHTML = `<span style="color: var(--lose-red);">Failed to upload. Check internet connection.</span>`;
+      notice.innerHTML = `<span style="color: var(--lose-red);">Upload failed. Please check internet connection.</span>`;
       submitBtn.disabled = false;
     }
   }
