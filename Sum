@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casino Probability Lab</title>
+<style>
+  :root {
+    --gold: #ffd700;
+    --felt-dark: #062814;
+    --felt-light: #0c4d27;
+    --border-wood: #221006;
+    --win-green: #2ecc71;
+    --lose-red: #e74c3c;
+  }
+
+  body {
+    margin: 0;
+    padding: 16px;
+    background: #0d0d0d;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #fff;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  /* Intro Screen Styling */
+  .intro-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle, #1a0f00 20%, #000 90%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .mascot-box {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .money-bag {
+    font-size: 6rem;
+    animation: bagBounce 1.4s infinite ease-in-out alternate;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+    cursor: pointer;
+  }
+
+  @keyframes bagBounce {
+    0% { transform: translateY(0) rotate(-4deg) scale(0.98); }
+    100% { transform: translateY(-16px) rotate(4deg) scale(1.04); }
+  }
+
+  .speech-bubble {
+    background: #fff;
+    color: #111;
+    border-radius: 20px;
+    padding: 18px 24px;
+    max-width: 520px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.7), 0 0 15px rgba(255, 215, 0, 0.4);
+    position: relative;
+    border: 3px solid var(--gold);
+    margin-bottom: 25px;
+  }
+
+  .speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 15px 15px 0;
+    border-style: solid;
+    border-color: #fff transparent;
+    display: block;
+    width: 0;
+  }
+
+  .rules-checklist {
+    background: rgba(255, 215, 0, 0.08);
+    border: 2px dashed var(--gold);
+    border-radius: 16px;
+    padding: 16px 24px;
+    max-width: 500px;
+    margin-bottom: 25px;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .rules-checklist span {
+    color: var(--gold);
+    font-weight: bold;
+  }
+
+  .prediction-box {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .pred-btn {
+    background: #222;
+    border: 2px solid var(--gold);
+    color: var(--gold);
+    font-weight: bold;
+    padding: 8px 18px;
+    border-radius: 20px;
+    margin: 0 6px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .pred-btn.selected {
+    background: var(--gold);
+    color: #111;
+  }
+
+  .start-casino-btn {
+    background: linear-gradient(180deg, #ffe066, #f39c12 50%, #b87304);
+    color: #1a0f00;
+    font-size: 1.3rem;
+    font-weight: 900;
+    padding: 14px 44px;
+    border: 2px solid #fff;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #6e4100, 0 10px 25px rgba(255, 215, 0, 0.4);
+    transition: 0.1s transform;
+  }
+
+  .start-casino-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 #6e4100;
+  }
+
+  /* Table Components */
+  canvas#fireworks {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .casino-table {
+    width: 100%;
+    max-width: 1150px;
+    background: radial-gradient(circle at 40% 40%, var(--felt-light) 0%, var(--felt-dark) 90%);
+    border: 14px solid var(--border-wood);
+    outline: 4px solid var(--gold);
+    border-radius: 40px;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.85), 0 0 25px rgba(255, 215, 0, 0.2);
+    padding: 24px;
+    box-sizing: border-box;
+    display: none; /* revealed after intro */
+  }
+
+  .table-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .table-header h1 {
+    font-size: 2rem;
+    margin: 0;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    text-transform: uppercase;
+  }
+
+  .table-header p {
+    margin: 4px 0 0;
+    font-size: 0.95rem;
+    color: #c8e6c9;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1.3fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .dice-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    position: relative;
+  }
+
+  .double-banner {
+    display: none;
+    background: linear-gradient(90deg, #ff0055, #ff5e00);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 1.05rem;
+    box-shadow: 0 0 16px #ff0055;
+    animation: pulse 0.7s infinite alternate;
+    margin-bottom: 20px;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.96); }
+    100% { transform: scale(1.04); }
+  }
+
+  .dice-box {
+    display: flex;
+    gap: 40px;
+    perspective: 1000px;
+    height: 110px;
+    align-items: center;
+  }
+
+  .die {
+    position: relative;
+    width: 65px;
+    height: 65px;
+    transform-style: preserve-3d;
+    transition: transform 1s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+
+  .face {
+    position: absolute;
+    width: 65px;
+    height: 65px;
+    background: #fff;
+    border-radius: 10px;
+    border: 2px solid #ccc;
+  }
+
+  .dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #111;
+  }
+  .dot.red { background: #d63031; width: 14px; height: 14px; }
+
+  .f-1 { transform: rotateY(0deg) translateZ(32px); }
+  .f-6 { transform: rotateY(180deg) translateZ(32px); }
+  .f-2 { transform: rotateY(-90deg) translateZ(32px); }
+  .f-5 { transform: rotateY(90deg) translateZ(32px); }
+  .f-3 { transform: rotateX(90deg) translateZ(32px); }
+  .f-4 { transform: rotateX(-90deg) translateZ(32px); }
+
+  .f-1 .dot { top: 25px; left: 25px; }
+  .f-2 .dot:nth-child(1) { top: 10px; left: 10px; }
+  .f-2 .dot:nth-child(2) { bottom: 10px; right: 10px; }
+  .f-3 .dot:nth-child(1) { top: 10px; left: 10px; }
+  .f-3 .dot:nth-child(2) { top: 26px; left: 26px; }
+  .f-3 .dot:nth-child(3) { bottom: 10px; right: 10px; }
+  .f-4 .dot:nth-child(1) { top: 10px; left: 10px; }
+  .f-4 .dot:nth-child(2) { top: 10px; right: 10px; }
+  .f-4 .dot:nth-child(3) { bottom: 10px; left: 10px; }
+  .f-4 .dot:nth-child(4) { bottom: 10px; right: 10px; }
+  .f-5 .dot:nth-child(1) { top: 10px; left: 10px; }
+  .f-5 .dot:nth-child(2) { top: 10px; right: 10px; }
+  .f-5 .dot:nth-child(3) { top: 26px; left: 26px; }
+  .f-5 .dot:nth-child(4) { bottom: 10px; left: 10px; }
+  .f-5 .dot:nth-child(5) { bottom: 10px; right: 10px; }
+  .f-6 .dot:nth-child(1) { top: 8px; left: 10px; }
+  .f-6 .dot:nth-child(2) { top: 26px; left: 10px; }
+  .f-6 .dot:nth-child(3) { bottom: 8px; left: 10px; }
+  .f-6 .dot:nth-child(4) { top: 8px; right: 10px; }
+  .f-6 .dot:nth-child(5) { top: 26px; right: 10px; }
+  .f-6 .dot:nth-child(6) { bottom: 8px; right: 10px; }
+
+  .status-text {
+    margin: 15px 0 10px;
+    font-size: 0.95rem;
+    min-height: 24px;
+    font-weight: 600;
+  }
+
+  .casino-btn {
+    background: linear-gradient(180deg, #ffe066, #f39c12 50%, #b87304);
+    color: #1a0f00;
+    font-size: 1.15rem;
+    font-weight: 800;
+    padding: 12px 34px;
+    border: 2px solid #fff;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #6e4100, 0 8px 15px rgba(0,0,0,0.5);
+    transition: 0.1s transform;
+  }
+
+  .casino-btn:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #6e4100;
+  }
+
+  .casino-btn:disabled {
+    background: #444;
+    color: #777;
+    border-color: #555;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .reset-btn {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .results-panel {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .bankroll-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin-bottom: 12px;
+  }
+
+  .bankroll-val {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--gold);
+  }
+
+  .table-scroll {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .ledger-table th {
+    position: sticky;
+    top: 0;
+    background: #141414;
+    color: var(--gold);
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--gold);
+    z-index: 2;
+  }
+
+  .ledger-table td {
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .stat-box {
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    border-radius: 8px;
+    padding: 6px;
+    text-align: center;
+  }
+
+  .stat-box .title { font-size: 0.72rem; color: #aaa; }
+  .stat-box .num { font-size: 1.15rem; font-weight: bold; }
+
+  .submission-card {
+    display: none;
+    margin-top: 15px;
+    background: rgba(13, 20, 15, 0.95);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  }
+
+  .submission-card input {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--gold);
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 0.95rem;
+    width: 60%;
+    margin-right: 8px;
+    outline: none;
+  }
+
+  .submit-btn {
+    background: linear-gradient(180deg, #2ecc71, #27ae60);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="introScreen" class="intro-overlay">
+  <div class="speech-bubble" id="speechText">
+    "Step right up, rookie! Think the House always wins? Let's see if you can beat my math!"
+  </div>
+
+  <div class="mascot-box">
+    <div class="money-bag" onclick="speakRule()">💰</div>
+    <div style="font-size: 0.8rem; color: var(--gold); margin-top: 4px;">(Click Money Bag to hear host!)</div>
+  </div>
+
+  <div class="rules-checklist">
+    🎲 <span>Bankroll:</span> You get <strong>$20</strong> in chips for <strong>20 trials</strong>.<br>
+    🔥 <span>Doubles:</span> Roll doubles (1-1, 2-2...) and you <strong>must roll again!</strong><br>
+    ⚖️ <span>The Payout:</span> Non-double sum is <strong>Even (+ $1)</strong> or <strong>Odd (- $1)</strong>.
+  </div>
+
+  <div class="prediction-box">
+    <p style="margin: 0 0 8px; font-weight: bold; color: var(--gold);">Before rolling: Do you think this casino game is...</p>
+    <button class="pred-btn" onclick="selectPred(this, 'Fair')">⚖️ Fair</button>
+    <button class="pred-btn" onclick="selectPred(this, 'In Player Favor')">🍀 In Your Favor</button>
+    <button class="pred-btn" onclick="selectPred(this, 'House Rigged')">🎰 Rigged for the Casino</button>
+  </div>
+
+  <button class="start-casino-btn" onclick="startGame()">ENTER CASINO & ROLL</button>
+</div>
+
+<canvas id="fireworks"></canvas>
+
+<div class="casino-table" id="casinoStage">
+  <div class="table-header">
+    <h1>Casino Probability Lab</h1>
+    <p>Double = Keep Rolling! Non-Double: Even Sum = Win $1, Odd Sum = Lose $1</p>
+  </div>
+
+  <div class="layout">
+    <div class="dice-area">
+      <div id="doubleBanner" class="double-banner">DOUBLE HIT! ROLL AGAIN!</div>
+
+      <div class="dice-box">
+        <div class="die" id="die1">
+          <div class="face f-1"><div class="dot red"></div></div>
+          <div class="face f-2"><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        <div class="die" id="die2">
+          <div class="face f-1"><div class="dot red"></div></div>
+          <div class="face f-2"><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="face f-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+      </div>
+
+      <div id="statusText" class="status-text">Click Roll to start Trial 1</div>
+
+      <button id="rollBtn" class="casino-btn" onclick="handleRoll()">Roll Dice (1/20)</button>
+
+      <div id="submissionArea" class="submission-card">
+        <div style="font-size: 0.85rem; margin-bottom: 8px; color: var(--gold); font-weight: bold;">RECORD EXPERIMENT RESULTS</div>
+        <div style="display: flex; justify-content: center; align-items: center;">
+          <input type="text" id="studentName" placeholder="Enter student name..." />
+          <button class="submit-btn" onclick="submitResults()">Submit</button>
+        </div>
+        <div id="submitNotice" style="margin-top: 8px; font-size: 0.85rem;"></div>
+      </div>
+
+      <button class="reset-btn" onclick="resetGame()">Start New 20 Trials</button>
+    </div>
+
+    <div class="results-panel">
+      <div class="bankroll-banner">
+        <div>
+          <div style="font-size: 0.75rem; letter-spacing: 1px; color: #aaa;">REMAINING BANKROLL</div>
+          <div class="bankroll-val">$<span id="bankVal">20</span></div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; letter-spacing: 1px; color: #aaa;">NET PROFIT / LOSS</div>
+          <div id="netVal" style="font-size: 1.25rem; font-weight: bold; color: #bbb;">$0</div>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Trial</th>
+              <th>Double?</th>
+              <th>Even (Won $1)</th>
+              <th>Odd (Lost $1)</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+
+      <div class="summary-bar">
+        <div class="stat-box">
+          <div class="title">DOUBLES</div>
+          <div class="num" id="sumDoubles" style="color: var(--gold);">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="title">EVEN (WON)</div>
+          <div class="num" id="sumEvens" style="color: var(--win-green);">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="title">ODD (LOST)</div>
+          <div class="num" id="sumOdds" style="color: var(--lose-red);">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let studentPrediction = "None";
+
+  function selectPred(btn, val) {
+    document.querySelectorAll('.pred-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    studentPrediction = val;
+  }
+
+  function speakRule() {
+    const dialogs = [
+      "I'm Benny the Money Bag! You get twenty bucks. Hit an even sum, you win. Hit an odd, you lose!",
+      "If you roll a double, it doesn't count yet! You have to roll again!",
+      "Think it's fair? The numbers never lie, rookie!"
+    ];
+    const speech = dialogs[Math.floor(Math.random() * dialogs.length)];
+    document.getElementById("speechText").innerText = `"${speech}"`;
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(speech);
+      utter.rate = 1.1;
+      utter.pitch = 1.2;
+      window.speechSynthesis.speak(utter);
+    }
+  }
+
+  function startGame() {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    document.getElementById("introScreen").style.display = "none";
+    document.getElementById("casinoStage").style.display = "block";
+  }
+
+  /* Game Simulation State */
+  let bankroll = 20;
+  let trial = 1;
+  const maxTrials = 20;
+  let doublesInCurrentTrial = [];
+  let totalDoubles = 0;
+  let totalEvens = 0;
+  let totalOdds = 0;
+
+  const rotations = {
+    1: { x: 0, y: 0 },
+    2: { x: 0, y: 90 },
+    3: { x: -90, y: 0 },
+    4: { x: 90, y: 0 },
+    5: { x: 0, y: -90 },
+    6: { x: 0, y: 180 }
+  };
+
+  /* Fireworks */
+  const canvas = document.getElementById("fireworks");
+  const ctx = canvas.getContext("2d");
+  let particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function triggerFireworks() {
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: window.innerWidth * 0.35,
+        y: window.innerHeight * 0.45,
+        vx: (Math.random() - 0.5) * 12,
+        vy: (Math.random() - 0.5) * 12,
+        alpha: 1,
+        color: `hsl(${Math.random() * 360}, 100%, 60%)`
+      });
+    }
+  }
+
+  function renderFireworks() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p, i) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.12;
+      p.alpha -= 0.015;
+
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (p.alpha <= 0) particles.splice(i, 1);
+    });
+    requestAnimationFrame(renderFireworks);
+  }
+  renderFireworks();
+
+  function initTable() {
+    const tbody = document.getElementById("ledgerBody");
+    tbody.innerHTML = "";
+    for (let i = 1; i <= maxTrials; i++) {
+      const tr = document.createElement("tr");
+      tr.id = `row-${i}`;
+      tr.innerHTML = `
+        <td>${i}</td>
+        <td class="col-double">-</td>
+        <td class="col-even">-</td>
+        <td class="col-odd">-</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+  initTable();
+
+  function animateDice(id, val) {
+    const el = document.getElementById(id);
+    const rot = rotations[val];
+    const spinX = 720 * (Math.floor(Math.random() * 2) + 1);
+    const spinY = 720 * (Math.floor(Math.random() * 2) + 1);
+    el.style.transform = `rotateX(${rot.x + spinX}deg) rotateY(${rot.y + spinY}deg)`;
+  }
+
+  function handleRoll() {
+    const btn = document.getElementById("rollBtn");
+    btn.disabled = true;
+
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    const sum = d1 + d2;
+
+    animateDice("die1", d1);
+    animateDice("die2", d2);
+
+    setTimeout(() => {
+      resolveTurn(d1, d2, sum);
+    }, 1000);
+  }
+
+  function resolveTurn(d1, d2, sum) {
+    const banner = document.getElementById("doubleBanner");
+    const status = document.getElementById("statusText");
+    const btn = document.getElementById("rollBtn");
+    const row = document.getElementById(`row-${trial}`);
+    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    if (d1 === d2) {
+      totalDoubles++;
+      doublesInCurrentTrial.push(`${d1},${d1}`);
+      banner.style.display = "block";
+      triggerFireworks();
+
+      row.querySelector(".col-double").innerHTML = 
+        `<strong style="color: var(--gold);">${doublesInCurrentTrial.join(' ')}</strong>`;
+      
+      status.innerHTML = `Rolled Double ${d1}'s! <strong style="color: var(--gold);">Roll again!</strong>`;
+      btn.innerText = "Roll Again (Double Hit!)";
+      btn.disabled = false;
+      updateUI();
+    } else {
+      banner.style.display = "none";
+      if (doublesInCurrentTrial.length === 0) {
+        row.querySelector(".col-double").innerText = "No";
+      }
+
+      if (sum % 2 === 0) {
+        bankroll += 1;
+        totalEvens++;
+        row.querySelector(".col-even").innerHTML = `<strong style="color: var(--win-green);">+$1 (${sum})</strong>`;
+        status.innerHTML = `Rolled ${d1} & ${d2} = ${sum} (EVEN) ➔ <strong style="color: var(--win-green);">Won $1!</strong>`;
+      } else {
+        bankroll -= 1;
+        totalOdds++;
+        row.querySelector(".col-odd").innerHTML = `<strong style="color: var(--lose-red);">-$1 (${sum})</strong>`;
+        status.innerHTML = `Rolled ${d1} & ${d2} = ${sum} (ODD) ➔ <strong style="color: var(--lose-red);">Lost $1!</strong>`;
+      }
+
+      updateUI();
+
+      if (trial >= maxTrials) {
+        finishSimulation();
+        return;
+      }
+
+      trial++;
+      doublesInCurrentTrial = [];
+      btn.innerText = `Roll Dice (${trial}/20)`;
+      btn.disabled = false;
+    }
+  }
+
+  function finishSimulation() {
+    const btn = document.getElementById("rollBtn");
+    btn.disabled = true;
+    btn.innerText = "Completed (20/20)";
+    document.getElementById("statusText").innerHTML = "<strong style='color: var(--gold);'>All 20 trials finished! Enter your name to submit below.</strong>";
+    document.getElementById("submissionArea").style.display = "block";
+    triggerFireworks();
+  }
+
+  function submitResults() {
+    const nameInput = document.getElementById("studentName");
+    const name = nameInput.value.trim();
+    const notice = document.getElementById("submitNotice");
+
+    if (!name) {
+      notice.innerHTML = `<span style="color: var(--lose-red);">Please enter your name first!</span>`;
+      return;
+    }
+
+    const net = bankroll - 20;
+    const netSign = net >= 0 ? "+$" : "-$";
+
+    notice.innerHTML = `
+      <span style="color: var(--win-green); font-weight: bold;">
+        ✓ Recorded for ${name}! (Prediction was: ${studentPrediction})<br>
+        Final: $${bankroll} (${netSign}${Math.abs(net)}) | Doubles: ${totalDoubles} | Evens: ${totalEvens} | Odds: ${totalOdds}
+      </span>
+    `;
+    nameInput.disabled = true;
+  }
+
+  function updateUI() {
+    document.getElementById("bankVal").innerText = bankroll;
+    const diff = bankroll - 20;
+    const netEl = document.getElementById("netVal");
+    netEl.innerText = (diff >= 0 ? "+$" : "-$") + Math.abs(diff);
+    netEl.style.color = diff > 0 ? "var(--win-green)" : diff < 0 ? "var(--lose-red)" : "#bbb";
+
+    document.getElementById("sumDoubles").innerText = totalDoubles;
+    document.getElementById("sumEvens").innerText = totalEvens;
+    document.getElementById("sumOdds").innerText = totalOdds;
+  }
+
+  function resetGame() {
+    bankroll = 20;
+    trial = 1;
+    doublesInCurrentTrial = [];
+    totalDoubles = 0;
+    totalEvens = 0;
+    totalOdds = 0;
+
+    document.getElementById("doubleBanner").style.display = "none";
+    document.getElementById("submissionArea").style.display = "none";
+    document.getElementById("studentName").disabled = false;
+    document.getElementById("studentName").value = "";
+    document.getElementById("submitNotice").innerText = "";
+
+    document.getElementById("statusText").innerText = "Game reset! Click Roll to start Trial 1";
+    const btn = document.getElementById("rollBtn");
+    btn.disabled = false;
+    btn.innerText = "Roll Dice (1/20)";
+
+    initTable();
+    updateUI();
+  }
+</script>
+</body>
+</html>
